@@ -103,6 +103,9 @@ jobs:
     needs: build-and-image-security
     steps:
       - uses: actions/checkout@v4
+
+      - name: Prepare CI env file
+        run: cp .env.example .env
       
       - name: Docker Compose Config
         run: docker compose config
