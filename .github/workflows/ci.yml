@@ -104,6 +104,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
+      - name: Create dummy .env file
+        run: touch .env
+
       - name: Docker Compose Config
         run: docker compose config
         
