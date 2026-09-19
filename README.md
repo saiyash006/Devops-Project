@@ -9,7 +9,7 @@
 ![Logging](https://img.shields.io/badge/Logging-Loki_%26_Promtail-red?logo=grafana)
 ![Security](https://img.shields.io/badge/Security-Trivy_%7C_Gitleaks_%7C_tfsec-green)
 
-A production-grade, local DevSecOps infrastructure simulation built with **Terraform**, **Docker Compose**, **PowerShell**, and **Python**. It features a 3-tier isolated network model, zero-trust container security, an automated observability stack, self-healing queues, zero-downtime deployment rollbacks, and automated disaster recovery.
+A production-grade, local DevSecOps infrastructure simulation built with **Terraform**, **Docker Compose**, **PowerShell**, and **Python**. It features a 3-tier isolated network model, zero-trust container security, an automated observability stack, self-healing queues, zero-downtime deployment rollbacks, and automated disaster recovery..
 
 ---
 
