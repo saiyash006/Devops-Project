@@ -151,37 +151,49 @@ Run the unified start script from the project root:
 
 ---
 
-## 🧪 Interactive Chaos & Resilience Demonstrations
+## 🧪 Interactive Chaos & Resilience Demonstrations (Video Guide)
 
-Run these pre-configured scripts to observe system resilience under real-world failure scenarios:
+Run these pre-configured scripts to demonstrate system resilience, observability, and self-healing to the evaluator. **Ensure you have the Grafana Dashboard open (`http://localhost:3000`) before starting.**
 
-### Scenario 1: Traffic Load Simulation
-Generates sustained concurrent traffic against the platform:
+### Scenario 1: Traffic Load Simulation & Baseline
+Before triggering failures, establish a healthy traffic baseline so you have data to look at!
 ```powershell
-.\scripts\demo-load.ps1 -Requests 50 -Concurrency 5
+powershell -ExecutionPolicy Bypass -File .\scripts\demo-load.ps1
 ```
-*Watch the Request Rate (RPS) and p95 Latency charts update in real-time in the Grafana dashboard.*
+* **What it signifies**: This script runs continuously in the background, firing thousands of requests at the API and enqueuing jobs. 
+* **What to show in Grafana**: Wait about 30 seconds, then point out the **API Request Rate** and **Container CPU Usage** forming steady, healthy lines. This proves Prometheus is actively scraping real-time load metrics.
 
 ### Scenario 2: Worker Crash & Self-Healing Queue
-Simulates a crash of the background asynchronous worker:
+With the load generator still running, open a new terminal and simulate a crash of the background asynchronous worker:
 ```powershell
 .\scripts\demo-worker-failure.ps1
 ```
-*Enqueues 15 inference jobs, terminates the worker container, demonstrates queue backlog buildup in Redis, restarts the worker, and observes the backlog draining without data loss.*
+* **What it signifies**: Proves the architecture's decoupled nature. The API doesn't crash just because the worker died.
+* **What to show in Grafana**: 
+  1. **Worker Queue Depth**: Point out the massive spike! Because the worker crashed, it stopped processing jobs, but the API kept enqueuing them.
+  2. **Worker Restarts**: Watch the counter increment as Docker Compose's `restart: unless-stopped` policy kicks in to self-heal.
+  3. **Recovery**: Watch the queue depth rapidly drop back to 0 once the worker finishes restarting and chews through the backlog.
 
 ### Scenario 3: External Dependency (EHR) Failure & Circuit Breaking
 Simulates downstream healthcare API unavailability:
 ```powershell
 .\scripts\demo-ehr-failure.ps1
 ```
-*Triggers an outage on the mock EHR service, records downstream 503 responses, fires alerts in Alertmanager, and restores service gracefully.*
+* **What to show in Grafana**: 
+  * The **API Error Rate** will spike as downstream connections fail. 
+  * The **API 95th Percentile Latency** will jump significantly as the API blocks and waits for the external system to time out before failing gracefully.
 
 ### Scenario 4: Broken Deployment & Automated Rollback
 Validates zero-downtime safety gates:
 ```powershell
 .\scripts\demo-bad-deployment.ps1
 ```
-*Deploys a buggy container build, performs automated health probing, detects failure, and triggers an immediate rollback to the healthy revision.*
+* **What it signifies**: The script attempts to deploy a purposely broken image. It polls the health check, realizes the new container is failing to start, and automatically triggers the rollback sequence to restore the previous working image, ensuring zero downtime for the users!
+
+### Scenario 5: Centralized Log Aggregation (Loki)
+Logs are just as important as metrics.
+* **What to show in Grafana**: Click the **Explore** icon (the compass on the left menu). Change the data source to **Loki**. Query `{container="api-service"}` to pull up a live stream of all API logs.
+* **What it signifies**: Demonstrates that developers can search across hundreds of containers from one dashboard without ever needing SSH access.
 
 ---
 

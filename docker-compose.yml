@@ -20,6 +20,8 @@ services:
     image: api-service:v1
     container_name: api-service
     env_file: .env
+    ports:
+      - "8000:8000"
     networks:
       - public-net
       - private-net
@@ -71,6 +73,8 @@ services:
     image: ehr-mock:v1
     container_name: ehr-mock
     env_file: .env
+    ports:
+      - "8002:8000"
     networks:
       - private-net
     restart: unless-stopped

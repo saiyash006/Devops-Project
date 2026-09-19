@@ -29,7 +29,7 @@
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
       "targets": [
         {
-          "expr": "sum(rate(api_request_count[1m])) by (endpoint)",
+          "expr": "sum(rate(api_request_count_total[1m])) by (endpoint)",
           "legendFormat": "{{endpoint}}"
         }
       ]
@@ -41,7 +41,7 @@
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
       "targets": [
         {
-          "expr": "sum(rate(api_request_count{http_status=~\"5..\"}[1m])) by (endpoint)",
+          "expr": "sum(rate(api_request_count_total{http_status=~\"[45]..\"}[1m])) by (endpoint)",
           "legendFormat": "5xx {{endpoint}}"
         }
       ]
@@ -105,8 +105,8 @@
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
       "targets": [
         {
-          "expr": "sum(rate(container_cpu_usage_seconds_total{container!=\"\"}[1m])) by (container)",
-          "legendFormat": "{{container}}"
+          "expr": "sum(rate(container_cpu_usage_seconds_total{id=\"/docker\"}[1m]))",
+          "legendFormat": "Docker Total Usage"
         }
       ]
     }

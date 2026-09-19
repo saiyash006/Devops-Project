@@ -20,7 +20,9 @@ Write-Host "Worker should now crash on the next job."
 Start-Sleep -Seconds 2
 Write-Host "Sending a job to trigger crash..."
 $body = @{ patient_id = 999; date = "2026-10-01"; details = "Crash trigger" } | ConvertTo-Json
-Invoke-RestMethod -Uri "http://localhost/appointments" -Method Post -Body $body -ContentType "application/json" | Out-Null
+try {
+    Invoke-RestMethod -Uri "http://localhost/appointments" -Method Post -Body $body -ContentType "application/json" -ErrorAction SilentlyContinue | Out-Null
+} catch {}
 
 Start-Sleep -Seconds 5
 Write-Host "Check Grafana 'Worker Restarts' panel. Restart policy will recover it."
