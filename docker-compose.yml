@@ -1,0 +1,202 @@
+version: '3.8'
+
+services:
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./config/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    networks:
+      - public-net
+    depends_on:
+      - api-service
+    restart: unless-stopped
+
+  api-service:
+    build:
+      context: ./src/api-service
+    image: api-service:v1
+    container_name: api-service
+    env_file: .env
+    networks:
+      - public-net
+      - private-net
+    depends_on:
+      - postgres
+      - redis
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+
+  ai-agent-service:
+    build:
+      context: ./src/ai-agent-service
+    image: ai-agent-service:v1
+    container_name: ai-agent-service
+    env_file: .env
+    networks:
+      - private-net
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.2'
+          memory: 256M
+
+  worker:
+    build:
+      context: ./src/worker
+    image: worker:v1
+    container_name: worker
+    env_file: .env
+    networks:
+      - private-net
+    depends_on:
+      - redis
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+
+  ehr-mock:
+    build:
+      context: ./src/ehr-mock
+    image: ehr-mock:v1
+    container_name: ehr-mock
+    env_file: .env
+    networks:
+      - private-net
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: postgres
+    env_file: .env
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - private-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-dev_user} -d ${POSTGRES_DB:-health_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    networks:
+      - private-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Observability Stack
+  prometheus:
+    image: prom/prometheus:v2.45.0
+    container_name: prometheus
+    volumes:
+      - ./config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    networks:
+      - private-net
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+
+  alertmanager:
+    image: prom/alertmanager:v0.25.0
+    container_name: alertmanager
+    volumes:
+      - ./config/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+    networks:
+      - private-net
+    restart: unless-stopped
+    ports:
+      - "9093:9093"
+
+  grafana:
+    image: grafana/grafana:10.0.0
+    container_name: grafana
+    volumes:
+      - ./config/grafana/provisioning:/etc/grafana/provisioning:ro
+      - grafana_data:/var/lib/grafana
+    networks:
+      - private-net
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+
+  loki:
+    image: grafana/loki:2.8.2
+    container_name: loki
+    volumes:
+      - ./config/loki/loki-config.yml:/etc/loki/local-config.yaml:ro
+    command: -config.file=/etc/loki/local-config.yaml
+    networks:
+      - private-net
+    restart: unless-stopped
+    ports:
+      - "3100:3100"
+
+  promtail:
+    image: grafana/promtail:2.8.2
+    container_name: promtail
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./config/promtail/promtail-config.yml:/etc/promtail/config.yml:ro
+    command: -config.file=/etc/promtail/config.yml
+    networks:
+      - private-net
+    restart: unless-stopped
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.47.0
+    container_name: cadvisor
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    networks:
+      - private-net
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    # cAdvisor needs some specific privileges, but we keep it read-only mostly
+
+networks:
+  public-net:
+    name: ${ENVIRONMENT:-dev}-public-net
+    external: true
+  private-net:
+    name: ${ENVIRONMENT:-dev}-private-net
+    external: true
+
+volumes:
+  postgres_data:
+    name: ${ENVIRONMENT:-dev}-postgres-data
+    external: true
+  redis_data:
+    name: ${ENVIRONMENT:-dev}-redis-data
+    external: true
+  grafana_data:
+    name: ${ENVIRONMENT:-dev}-grafana-data
+    external: true

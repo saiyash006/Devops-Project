@@ -1,0 +1,47 @@
+groups:
+- name: devsecops-alerts
+  rules:
+  - alert: InstanceDown
+    expr: up == 0
+    for: 10s
+    labels:
+      severity: critical
+    annotations:
+      summary: "Instance {{ $labels.instance }} down"
+      description: "{{ $labels.instance }} of job {{ $labels.job }} has been down for more than 10 seconds."
+
+  - alert: HighErrorRate
+    expr: rate(api_request_count{http_status=~"5.."}[1m]) > 0.05
+    for: 1m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High 5xx error rate on {{ $labels.endpoint }}"
+      description: "Error rate is above 5% on {{ $labels.endpoint }}"
+
+  - alert: HighLatency
+    expr: histogram_quantile(0.95, rate(api_request_latency_seconds_bucket[1m])) > 1.0
+    for: 1m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High latency on API"
+      description: "95th percentile latency is above 1s"
+
+  - alert: HighQueueDepth
+    expr: worker_queue_depth > 10
+    for: 1m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High queue depth"
+      description: "Worker queue depth is above 10"
+
+  - alert: WorkerRestarts
+    expr: rate(worker_restarts_total[5m]) > 0
+    for: 1m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Worker is restarting frequently"
+      description: "Worker has restarted in the last 5 minutes"

@@ -1,0 +1,14 @@
+.env
+.terraform/
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.backup
+__pycache__/
+*.pyc
+node_modules/
+dist/
+coverage/
+.vscode/
+.idea/
+backups/
+*.log
