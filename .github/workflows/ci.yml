@@ -39,6 +39,8 @@ jobs:
     needs: validate
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       
       - name: Gitleaks (Secrets Scan)
         uses: gitleaks/gitleaks-action@v2
