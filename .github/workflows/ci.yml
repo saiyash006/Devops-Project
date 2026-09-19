@@ -9,7 +9,7 @@ on:
 jobs:
   validate:
     name: Stage 1 - Validate
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       
@@ -35,7 +35,7 @@ jobs:
 
   security-source:
     name: Stage 2 - Security (Source & Secrets)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: validate
     steps:
       - uses: actions/checkout@v4
@@ -55,7 +55,7 @@ jobs:
 
   security-infra:
     name: Stage 3 - Security (Infrastructure)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: validate
     steps:
       - uses: actions/checkout@v4
@@ -76,10 +76,11 @@ jobs:
         uses: aquasecurity/tfsec-action@v1.0.3
         with:
           working_directory: infra/
+          github_token: ${{ github.token }}
 
   build-and-image-security:
     name: Stage 4 - Build & Image Security
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: [security-source, security-infra]
     steps:
       - uses: actions/checkout@v4
@@ -99,7 +100,7 @@ jobs:
 
   deployment-readiness:
     name: Stage 5 - Deployment Readiness
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: build-and-image-security
     steps:
       - uses: actions/checkout@v4
@@ -117,7 +118,7 @@ jobs:
           
   summary:
     name: Stage 6 - Summary
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     if: always()
     needs: [validate, security-source, security-infra, build-and-image-security, deployment-readiness]
     steps:
